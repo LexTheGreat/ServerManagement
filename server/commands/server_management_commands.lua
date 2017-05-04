@@ -1,51 +1,4 @@
--- http://lua-users.org/wiki/TableUtils
-
-tableUtil = {}
-function tableUtil.val_to_str ( v )
-  if "string" == type( v ) then
-    v = string.gsub( v, "\n", "\\n" )
-    if string.match( string.gsub(v,"[^'\"]",""), '^"+$' ) then
-      return "'" .. v .. "'"
-    end
-    return '"' .. string.gsub(v,'"', '\\"' ) .. '"'
-  else
-    return "table" == type( v ) and tableUtil.tostring( v ) or
-      tostring( v )
-  end
-end
-
-function tableUtil.key_to_str ( k )
-  if "string" == type( k ) and string.match( k, "^[_%a][_%a%d]*$" ) then
-    return k
-  else
-    return "[" .. table.val_to_str( k ) .. "]"
-  end
-end
-
-function tableUtil.tostring( tbl )
-  local result, done = {}, {}
-  for k, v in ipairs( tbl ) do
-    table.insert( result, tableUtil.val_to_str( v ) )
-    done[ k ] = true
-  end
-  for k, v in pairs( tbl ) do
-    if not done[ k ] then
-      table.insert( result,
-        tableUtil.key_to_str( k ) .. "=" .. tableUtil.val_to_str( v ) )
-    end
-  end
-  return "{" .. table.concat( result, "," ) .. "}"
-end
-
-function CMD_smhelp(source, args, help)
-	TriggerClientEvent('chatMessage', source, '================================', { 0, 255, 0 }, '')
-	CMD_guid(source, args, true)
-	CMD_kick(source, args, true)
-	CMD_kickid(source, args, true)
-	CMD_ban(source, args, true)
-	CMD_banid(source, args, true)
-	TriggerClientEvent('chatMessage', source, '================================', { 0, 255, 0 }, '')
-end
+-- Server Management
 
 function CMD_guid(source, args, help)
 	if help then
@@ -121,7 +74,7 @@ function CMD_ban(source, args, help)
 		return 1
 	end
 	
-	if not (isMod(source) or isAdmin(source)) then
+	if not isAdmin(source) then
 		TriggerClientEvent('chatMessage', source, 'SM', { 0, 255, 0 }, 'You are not staff!')
 		return 1
 	end
@@ -151,7 +104,7 @@ function CMD_banid(source, args, help)
 		return 1
 	end
 	
-	if not (isMod(source) or isAdmin(source)) then
+	if not isAdmin(source) then
 		TriggerClientEvent('chatMessage', source, 'SM', { 0, 255, 0 }, 'You are not staff!')
 		return 1
 	end
@@ -171,13 +124,4 @@ function CMD_banid(source, args, help)
 	else
 		TriggerClientEvent('chatMessage', source, 'SM', { 0, 255, 0 }, 'Wrong Usage /banid id reason.')
 	end
-end
-
-function Count(t)
-	count = 0
-	for k,v in pairs(t) do
-		 count = count + 1
-	end
-	
-	return count
 end

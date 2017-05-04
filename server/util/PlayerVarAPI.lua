@@ -1,4 +1,4 @@
--- API
+-- API (Don't mess with if you do not know what you are doing.)
 PlayerVar = {}
 Players = {}
 
