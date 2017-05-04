@@ -2,7 +2,6 @@
 Get the player guid from /getguid
 ]]
 
-
 Admin = {
 	"steam:110000108718a42"
 }
@@ -10,10 +9,8 @@ Mod = {
 	"steam:110000108718a42"
 }
 Trusted = {
-	"steam:110000108718a42",
-	"steam:456454654654564"
+	"steam:110000108718a42"
 }
-
 
 -- Don't Change anything below if you don't know what you are doing.
 
@@ -29,13 +26,34 @@ end
 
 
 function isAdmin(id)
-	return inArray(GetPlayerGuid(id), Admin)
+	local identifiers = GetPlayerIdentifiers(id)
+	
+	for _, v in ipairs(identifiers) do
+		if inArray(v, Admin) then
+			return true
+		end
+	end
+	return false
 end
 
 function isMod(id)
-	return inArray(GetPlayerGuid(id), Mod)
+	local identifiers = GetPlayerIdentifiers(id)
+	
+	for _, v in ipairs(identifiers) do
+		if inArray(v, Mod) then
+			return true
+		end
+	end
+	return false
 end
 
 function isTrusted(id)
-	return inArray(GetPlayerGuid(id), Trusted)
+	local identifiers = GetPlayerIdentifiers(id)
+	
+	for _, v in ipairs(identifiers) do
+		if inArray(v, Trusted) then
+			return true
+		end
+	end
+	return false
 end

@@ -14,15 +14,19 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 
 ]]
 
-local MAX_EXCLUDED_CMDS 	= 1000
-local CMDDEBUG_MODE 		= false
+local MAX_COMMANDS = 1000
+local MAX_EXCLUDED_CMDS 	= MAX_COMMANDS
+local CMDDEBUG_MODE 		= true
 local excludedPlayerCMDS 	= {}
+--new
+local allCommands = {{},{},{}} --Three dimensional
+local CMD_NAME = 1
 
 --Command exit codes (Made these global since other scripts may use them)
 CMD_EXIT_CODE_ERROR, CMD_EXIT_CODE_SUCCESS, CMD_EXIT_CODE_PREPROC_NOT_ALLOWED = 0, 1, 2
 
 AddEventHandler('onResourceStart', function(resource)
-	initCommandsArray() --initialize commands array
+	print('Command resource started!')
 	--[[
 	for i = 1, 32 do
 		excludeCMDForPlayer(i, "CMD_vehicle") --Exclude this command for every single player..
@@ -30,12 +34,27 @@ AddEventHandler('onResourceStart', function(resource)
 	]]
 end)
 
-RegisterServerEvent("chatCommandEntered") -- Registers the event so that i can be called by the client.
-AddEventHandler('chatCommandEntered', function(fullcommand) -- Event handler for when a command is entered,
-	local command = stringsplit_command(string.gsub(fullcommand, "/", ""), " ") -- Converts the command arguments into an array for easy usage.
+AddEventHandler('chatMessage', function(source, name, message)
+	if(string.sub(message, 1, 1) == "/" and string.len(message) >= 2) then
+		chatCommandEntered(source, message)
+		CancelEvent()
+	end
+end)
+
+
+function chatCommandEntered(source, fullcommand) -- Event handler for when a command is entered,
+	if source == nil then
+		print('[commands]: Got a nil source! (error)')
+	end
+
+    fullcommand = string.gsub(fullcommand, "/", "")
+	local command = stringsplit_command(fullcommand, " ") -- Converts the command arguments into an array for easy usage.
 	local cmdname = command[1]
 	local success = ProcessedCMD(source, command)
-end)
+	if OnPlayerCommandProcessed then
+		OnPlayerCommandProcessed(source, cmdname, success)
+	end
+end
 
 --[[
 --These functions can be in any given file but they can only be implemented once
@@ -56,23 +75,29 @@ end
 function ProcessedCMD(source, command) --This function evaluates if a command can be processed or not. Todo: add a table with loaded commands to restrict them?
 	if string.len(command[1]) then
 		local cmdFunc = "CMD_" .. command[1]
-		if _G[cmdFunc] then
-			table.remove(command, 1) --Remove the first element which is the command name prior to sending the args
-			_G[cmdFunc](source, command, false)
-			return CMD_EXIT_CODE_SUCCESS
-		end
+		--if not isCMDExcludedForPlayer(source, cmdFunc) then
+			if _G[cmdFunc] then 
+				--[[if OnPlayerPreProcessCMD then --Only try and call this if the function is present in the script
+					local result = OnPlayerPreProcessCMD(source, command[1])
+					if result ~= 1 then
+						return CMD_EXIT_CODE_PREPROC_NOT_ALLOWED
+					end
+				end]]
+				table.remove(command, 1) --Remove the first element which is the command name prior to sending the args
+			    _G[cmdFunc](source, command, false)
+			    return CMD_EXIT_CODE_SUCCESS
+			end
+		--end
 	end
 	return CMD_EXIT_CODE_ERROR
 end
 
-function initCommandsArray()
-	for i = 1, 32 do
-	    excludedPlayerCMDS[i] = {}
-	    for j = 1, MAX_EXCLUDED_CMDS do
-	        excludedPlayerCMDS[i][j] = 0 -- Fill the values here
-	    end
-	end
-	print('Commands initialized!')
+function initCommandsArray(source)
+    excludedPlayerCMDS[source] = {}
+    for j = 1, MAX_EXCLUDED_CMDS do
+        excludedPlayerCMDS[source][j] = 0 -- Fill the values here
+    end
+	print('excludedPlayerCMDS initialized for player ' .. source)
 end
 
 --simply unloads all commands
@@ -83,8 +108,12 @@ function unloadExcludedCMDSForPlayer(source)
 end
 
 function isCMDExcludedForPlayer(source, cmdFunc)
+	if CMDDEBUG_MODE then
+		print(string.format("isCMDExcludedForPlayer(%d, %s)", source, cmdFunc))
+	end
 	for j = 1, MAX_EXCLUDED_CMDS do
-        if excludedPlayerCMDS[source][j] == cmdFunc then
+		local cmdFuncIdx = excludedPlayerCMDS[source][j]
+        if cmdFuncIdx ~= 0 and cmdFuncIdx == cmdFunc then
         	return true
         end
     end
@@ -107,8 +136,14 @@ function findFreeCMDSlot(source)
     return -1
 end
 
+RegisterServerEvent("commands_onPlayerJoining")
+AddEventHandler('commands_onPlayerJoining', function()
+	--initCommandsArray(source) Don't need to exclude we will handle that...
+	registerCommandsForPlayer(source)
+end)
+
 AddEventHandler('playerDropped', function(player)
-    unloadExcludedCMDSForPlayer(source)
+    -- unloadExcludedCMDSForPlayer(source)
     print('Commands cleared for player ' .. player .. ' with source ' .. source)
 end)
 
@@ -276,4 +311,59 @@ function parseInput(specifiers, args)
 		matched = false
 	end
 	return matched
+end
+
+function reloadRegisteredPlayerCommands(source)
+	return registerCommandsForPlayer(source)
+end
+
+function registerCommandsForPlayer(source)
+	print('Client with id ' .. source .. ' connecting, registering commands for such client...')
+    allCommands[source] = {{},{}}
+    local slot = 1
+    for cmdName, cmdFunc in pairs(_G) do
+        if type(cmdFunc) == "function" then
+        	if string.sub(cmdName,1,string.len('CMD_')) == 'CMD_' then
+        		--if not isCMDExcludedForPlayer(source, cmdName) then
+        			if #allCommands[source][CMD_NAME] > MAX_COMMANDS then
+			    		print("ERROR: Couldn't register command " .. cmdName .." too many " .. "(" .. #allCommands[source][CMD_NAME] .. ")," .. " increase MAX_COMMANDS(" .. MAX_COMMANDS .. ")!!!!!")
+			    		break
+			    	end
+            		allCommands[source][CMD_NAME][slot] = cmdName
+    				slot = slot + 1
+            	--end
+        	end
+        end
+    end
+    return allCommands
+end
+
+function Command_GetNext(source, index) --Only parse registered commands
+	local buffer
+	if index >= 1 and index <= getRegisteredCommandCount(source) then
+		if allCommands[source][CMD_NAME][index] ~= nil then
+			buffer = allCommands[source][CMD_NAME][index]
+		end
+	end
+	return buffer
+end
+
+function Command_GetNext_Wrapper(source, index)
+	local buffer = Command_GetNext(source,index )
+	if buffer ~= nil then
+		if CMDDEBUG_MODE then
+			print('buffer not nil')
+		end
+		local buffExplode = stringsplit_command(buffer, "_") --We only want the name
+		buffer = buffExplode[2]
+	end
+	return buffer
+end
+
+function getRegisteredCommandCount(source)
+	return #allCommands[source][CMD_NAME]
+end
+
+function getMaxCommands()
+	return MAX_COMMANDS
 end
