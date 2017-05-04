@@ -16,7 +16,7 @@ function CMD_rmstart(source, args, help)
 		local Resource = table.unpack(arguments) 
 		
 		if Resource == "ServerManagement" then
-			TriggerClientEvent('chatMessage', source, 'RM', { 255, 0, 0 }, 'You can''t do that!')
+			TriggerClientEvent('chatMessage', source, 'RM', { 255, 0, 0 }, 'You can\'t do that!')
 			return 1
 		end
 		
@@ -47,7 +47,7 @@ function CMD_rmstop(source, args, help)
 		local Resource = table.unpack(arguments) 
 		
 		if Resource == "ServerManagement" then
-			TriggerClientEvent('chatMessage', source, 'RM', { 255, 0, 0 }, 'You can''t do that!')
+			TriggerClientEvent('chatMessage', source, 'RM', { 255, 0, 0 }, 'You can\'t do that!')
 			return 1
 		end
 		
@@ -78,7 +78,7 @@ function CMD_rmrestart(source, args, help)
 		local Resource = table.unpack(arguments) 
 		
 		if Resource == "ServerManagement" then
-			TriggerClientEvent('chatMessage', source, 'RM', { 255, 0, 0 }, 'You can''t do that!')
+			TriggerClientEvent('chatMessage', source, 'RM', { 255, 0, 0 }, 'You can\'t do that!')
 			return 1
 		end
 		
