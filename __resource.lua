@@ -1,7 +1,7 @@
 description 'Server Management Tools'
 
 -- Client
---client_script 'client/file.lua'
+client_script 'client/client_commands.lua'
 
 -- Server
 server_scripts 'server/PlayerVarAPI.lua'
