@@ -17,5 +17,6 @@ function CMD_smhelp(source, args, help)
 		CMD_rstop(source, args, true)
 		CMD_rrestart(source, args, true)
 	end
+	-- CMD_rlist(source, args, true) TODO
 	TriggerClientEvent('chatMessage', source, '================================', { 0, 255, 0 }, '')
 end
