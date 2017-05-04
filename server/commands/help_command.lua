@@ -13,9 +13,9 @@ function CMD_smhelp(source, args, help)
 	end
 	if isTrusted(source) then
 		TriggerClientEvent('chatMessage', source, 'Resource Management', { 0, 255, 0 }, '')
-		CMD_rstart(source, args, true)
-		CMD_rstop(source, args, true)
-		CMD_rrestart(source, args, true)
+		CMD_rmstart(source, args, true)
+		CMD_rmstop(source, args, true)
+		CMD_rmrestart(source, args, true)
 	end
 	TriggerClientEvent('chatMessage', source, '================================', { 0, 255, 0 }, '')
 end
